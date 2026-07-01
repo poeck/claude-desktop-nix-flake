@@ -47,6 +47,7 @@
   nss,
   OVMF,
   pango,
+  perl,
   qemu,
   systemd,
   trash-cli,
@@ -59,11 +60,11 @@ let
   sources = {
     x86_64-linux = {
       debArch = "amd64";
-      hash = "sha256-VjyN+O47lXyiNBFZgDhulgAH7Yz8jMBMd9WKjUP2wBg=";
+      hash = "sha256-9L14VFIAh3tZEXmDjeeteld99u0uhFlp3SVpDvxchcc=";
     };
     aarch64-linux = {
       debArch = "arm64";
-      hash = "sha256-R1ms8ZtqyYH7rlzRwlqCjunG6Vz6nqTLjJzNfC/FOHE=";
+      hash = "sha256-ZYrL/xS9nDXXle3kbwl/ynnUM6xK95LN1khqzTrcby4=";
     };
   };
 
@@ -132,7 +133,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "claude-desktop";
-  version = "1.17377.0";
+  version = "1.17377.1";
 
   src = fetchurl {
     url = "https://downloads.claude.ai/claude-desktop/apt/stable/pool/main/c/claude-desktop/claude-desktop_${finalAttrs.version}_${source.debArch}.deb";
@@ -144,6 +145,7 @@ stdenv.mkDerivation (finalAttrs: {
     asar
     autoPatchelfHook
     makeWrapper
+    perl
     wrapGAppsHook3
   ];
 
@@ -173,13 +175,13 @@ stdenv.mkDerivation (finalAttrs: {
     asarRoot="$(mktemp -d)"
     asar extract "$out/lib/claude-desktop/resources/app.asar" "$asarRoot"
 
-    substituteInPlace "$asarRoot/.vite/build/index.js" \
-      --replace-fail 'boi=process.arch==="arm64"?["/usr/share/AAVMF/AAVMF_CODE.fd"]:["/usr/share/OVMF/OVMF_CODE_4M.fd","/usr/share/OVMF/OVMF_CODE.fd"]' \
-                     'boi=["${firmwareCodePath}"]' \
-      --replace-fail 'Loi=["/usr/libexec/virtiofsd","/usr/bin/virtiofsd"]' \
-                     "Loi=[\"$out/lib/claude-desktop/resources/virtiofsd\"]" \
-      --replace-fail 'function qoi(A){return A.replace("OVMF_CODE","OVMF_VARS").replace("AAVMF_CODE","AAVMF_VARS")}' \
-                     'function qoi(A){return A.replace("OVMF_CODE","OVMF_VARS").replace("AAVMF_CODE","AAVMF_VARS").replace("edk2-aarch64-code.fd","edk2-arm-vars.fd")}'
+    FIRMWARE_CODE_PATH="${firmwareCodePath}" \
+    VIRTIOFSD_PATH="$out/lib/claude-desktop/resources/virtiofsd" \
+    perl -0pi -e '
+      s{([A-Za-z0-9_\$]+)=process\.arch==="arm64"\?\["/usr/share/AAVMF/AAVMF_CODE\.fd"\]:\["/usr/share/OVMF/OVMF_CODE_4M\.fd","/usr/share/OVMF/OVMF_CODE\.fd"\]}{$1=["$ENV{FIRMWARE_CODE_PATH}"]} or die "failed to patch firmware path\n";
+      s{([A-Za-z0-9_\$]+)=\["/usr/libexec/virtiofsd","/usr/bin/virtiofsd"\]}{$1=["$ENV{VIRTIOFSD_PATH}"]} or die "failed to patch virtiofsd path\n";
+      s{return A\.replace\("OVMF_CODE","OVMF_VARS"\)\.replace\("AAVMF_CODE","AAVMF_VARS"\)}{return A.replace("OVMF_CODE","OVMF_VARS").replace("AAVMF_CODE","AAVMF_VARS").replace("edk2-aarch64-code.fd","edk2-arm-vars.fd")} or die "failed to patch firmware vars path\n";
+    ' "$asarRoot/.vite/build/index.js"
 
     rm "$out/lib/claude-desktop/resources/app.asar"
     asar pack --unpack "*.node" "$asarRoot" "$out/lib/claude-desktop/resources/app.asar"

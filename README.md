@@ -64,7 +64,7 @@ Use as an overlay:
 ## What This Packages
 
 - Official package: `claude-desktop`
-- Version: `1.17377.0`
+- Version: tracked in `pkgs/claude-desktop/default.nix`
 - Architectures: `x86_64-linux`, `aarch64-linux`
 - Source: `https://downloads.claude.ai/claude-desktop/apt/stable`
 
