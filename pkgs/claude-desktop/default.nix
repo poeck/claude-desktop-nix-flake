@@ -169,7 +169,7 @@ stdenv.mkDerivation (finalAttrs: {
     cp -a usr/lib/claude-desktop "$out/lib/"
     cp -a usr/share/applications usr/share/icons usr/share/doc "$out/share/"
 
-    substituteInPlace "$out/share/applications/claude-desktop.desktop" \
+    substituteInPlace "$out/share/applications/com.anthropic.Claude.desktop" \
       --replace-fail "Exec=claude-desktop" "Exec=$out/bin/claude-desktop"
 
     asarRoot="$(mktemp -d)"
