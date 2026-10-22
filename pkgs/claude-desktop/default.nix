@@ -48,6 +48,7 @@
   OVMF,
   pango,
   perl,
+  pipewire,
   qemu,
   systemd,
   trash-cli,
@@ -106,6 +107,7 @@ let
     nspr
     nss
     pango
+    pipewire
     stdenv.cc.cc.lib
     systemd
     vulkan-loader
